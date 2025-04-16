@@ -13,11 +13,11 @@ bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher()
 dp["pending_appointments"] = {}
 
-# Подключение к базе данных
+
 conn = sqlite3.connect("appointments.db")
 cursor = conn.cursor()
 
-# Создание таблицы, если её нет
+
 cursor.execute("""CREATE TABLE IF NOT EXISTS appointments (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER,
@@ -27,13 +27,13 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS appointments (
                     time INTEGER)""")
 conn.commit()
 
-# Временное хранилище данных перед записью
+
 dp["pending_appointments"] = {}
 
 # Функция главного меню
 def main_menu():
     keyboard = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[
-        [KeyboardButton(text="📅 Записаться на бесплатную сессию")]
+        [KeyboardButton(text="Записаться на бесплатную сессию")]
     ])
     return keyboard
 
@@ -46,7 +46,7 @@ async def start_command(message: types.Message):
     )
     await message.answer(text, reply_markup=main_menu())
 
-# Функция получения свободных часов
+
 def get_available_times(date):
     available_hours = range(16, 22)  # Время с 16:00 до 21:00
     free_hours = []
@@ -72,7 +72,7 @@ def generate_date_keyboard():
     today = datetime.today()
     keyboard = []
 
-    for i in range(7):
+    for i in range(1, 8):
         date = (today + timedelta(days=i)).strftime('%Y-%m-%d')
         if get_available_times(date):
             formatted_date = (today + timedelta(days=i)).strftime("%d.%m (%a)")
@@ -81,7 +81,7 @@ def generate_date_keyboard():
     return InlineKeyboardMarkup(inline_keyboard=keyboard) if keyboard else None
 
 # Обработчик кнопки "Записаться"
-@dp.message(lambda message: message.text == "📅 Записаться на бесплатную сессию")
+@dp.message(lambda message: message.text == "Записаться на бесплатную сессию")
 async def choose_date(message: types.Message):
     keyboard = generate_date_keyboard()
     if keyboard:
@@ -115,7 +115,7 @@ async def confirm_appointment(callback: types.CallbackQuery):
     user_id = callback.from_user.id
     hour = int(hour)
 
-    # Сохраняем временные данные
+
     dp["pending_appointments"][user_id] = {"date": date, "time": hour}
     await callback.message.answer("Теперь отправьте свой номер телефона:", reply_markup=phone_keyboard())
 
@@ -129,7 +129,7 @@ async def get_email(message: types.Message):
         await message.answer("⚠️ Произошла ошибка. Попробуйте заново.")
         return
 
-    # Сохраняем номер телефона
+
     dp["pending_appointments"][user_id]["phone"] = phone_number
     await message.answer("Отлично! Теперь введите ваш email:")
 
@@ -139,7 +139,7 @@ def main_menu_keyboard():
         [KeyboardButton(text="🔙 Вернуться в главное меню")]
     ])
 
-# Обработчик email и финализация записи
+# Обработчик email
 @dp.message(lambda message: message.text)
 async def finalize_appointment(message: types.Message):
     user_id = message.from_user.id
@@ -149,11 +149,11 @@ async def finalize_appointment(message: types.Message):
         await message.answer("⚠️ Произошла ошибка. Попробуйте заново.")
         return
 
-    # Получаем данные
+
     appointment = dp["pending_appointments"].pop(user_id)
     date, time, phone = appointment["date"], appointment["time"], appointment["phone"]
 
-    # Записываем в базу данных
+
     cursor.execute("INSERT INTO appointments (user_id, phone, email, date, time) VALUES (?, ?, ?, ?, ?)",
                    (user_id, phone, email, date, time))
     conn.commit()
@@ -169,11 +169,11 @@ async def finalize_appointment(message: types.Message):
     )
     await message.answer(confirmation_text, reply_markup=main_menu_keyboard())
 
-    # Уведомление психологу
+    # Уведомление админу
     admin_id = 1936828593  # Замени на свой Telegram ID
     await bot.send_message(admin_id, f"🆕 Новая запись!\n{confirmation_text}")
 
-# Обработчик кнопки "🔙 Вернуться в главное меню"
+# Обработчик кнопки "Вернуться в главное меню"
 @dp.message(lambda message: message.text == "🔙 Вернуться в главное меню")
 async def return_to_main_menu(message: types.Message):
     await message.answer("Вы в главном меню. Выберите действие:", reply_markup=main_menu())
@@ -186,7 +186,7 @@ def main_menu():
     ])
     return keyboard
 
-# Обработчик кнопки "ℹ️ Узнать больше о психологе"
+# Обработчик кнопки "ℹ️Узнать больше о психологе"
 @dp.message(lambda message: message.text == "ℹ️ Узнать больше о психологе")
 async def about_psychologist(message: types.Message):
     text = (
@@ -200,7 +200,7 @@ async def about_psychologist(message: types.Message):
 # Обработчик кнопки "📢 Перейти в ТГ канал"
 @dp.message(lambda message: message.text == "📢 Перейти в ТГ канал")
 async def go_to_channel(message: types.Message):
-    channel_link = "https://t.me/YOUR_CHANNEL_LINK"  # Укажи ссылку на канал
+    channel_link = "https://t.me/HYPNO_GAME"
     await message.answer(f"📢 Присоединяйтесь к нашему Telegram-каналу: [Нажмите сюда]({channel_link})", parse_mode="Markdown")
 
 # Запуск бота
